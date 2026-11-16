@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Речі під контролем · ЗБД 6 клас</title>
+  <style>
+    :root {
+      --ink: #15273b;
+      --text: #30435b;
+      --muted: #6b7b91;
+      --line: #dfe7f0;
+      --bg: #f4f7fb;
+      --paper: #ffffff;
+      --accent: #325dda;
+      --accent-dark: #224abf;
+      --accent-pale: #edf2ff;
+      --green: #117667;
+      --green-soft: #e7f6f1;
+      --amber: #885617;
+      --amber-soft: #fff4e4;
+      --red: #9d3c3c;
+      --red-soft: #fff0f0;
+      --shadow: 0 22px 70px rgba(33, 57, 94, .10);
+      --radius: 24px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Arial", sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 8% 3%, #dce9ff 0, transparent 34%),
+                  radial-gradient(circle at 100% 38%, #e1f4ec 0, transparent 30%), var(--bg);
+      line-height: 1.5;
+    }
+    button, textarea, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    a { color: var(--accent); }
+    :focus-visible { outline: 3px solid #78a4ff; outline-offset: 3px; }
+    .hidden { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .app-shell { width: min(1080px, calc(100% - 36px)); margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+    .app-shell.is-blurred { filter: blur(7px); pointer-events: none; user-select: none; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 27px 2px 24px; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; letter-spacing: -.025em; }
+    .brand-mark { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 14px; background: var(--ink); color: #fff; font-size: 23px; box-shadow: 0 7px 17px rgba(18,39,68,.16); }
+    .brand-sub { display: block; color: var(--muted); font-weight: 600; font-size: 12px; letter-spacing: .02em; margin-top: -3px; }
+    .top-pill { color: #426183; background: #fff; border: 1px solid var(--line); font-size: 12px; font-weight: 800; letter-spacing: .025em; padding: 9px 13px; border-radius: 30px; white-space: nowrap; }
+    main { flex: 1; }
+    .footer { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); padding: 25px 2px 26px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(34px, 5.2vw, 57px); letter-spacing: -.055em; line-height: 1.1; margin-bottom: 18px; }
+    h2 { font-size: clamp(24px, 3.3vw, 34px); line-height: 1.14; letter-spacing: -.035em; margin-bottom: 12px; }
+    h3 { letter-spacing: -.02em; }
+    p { color: var(--text); }
+    .eyebrow { display: inline-flex; align-items: center; gap: 7px; text-transform: uppercase; font-size: 11px; font-weight: 850; letter-spacing: .11em; color: #3c6290; margin-bottom: 18px; }
+    .eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #47beab; }
+    .intro-hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(260px, .8fr); gap: 24px; align-items: stretch; margin: 8px 0 24px; }
+    .hero-copy { padding: 36px 14px 16px 3px; }
+    .hero-copy p { max-width: 530px; font-size: 16px; line-height: 1.68; }
+    .marker { background: linear-gradient(transparent 70%, #d1f6df 70%); }
+    .hero-card { border-radius: 32px; padding: 28px; position: relative; min-height: 258px; background: linear-gradient(140deg, #1a3554, #244975); color: white; overflow: hidden; box-shadow: var(--shadow); }
+    .hero-card::after { content: ''; position: absolute; width: 240px; height: 240px; border-radius: 50%; right: -83px; bottom: -97px; border: 35px solid rgba(255,255,255,.08); }
+    .hero-card-label { font-weight: 750; color: #d8edff; font-size: 13px; letter-spacing: .02em; }
+    .hero-number { display: block; font-size: 72px; font-weight: 850; line-height: 1.06; letter-spacing: -.08em; margin: 31px 0 8px; }
+    .hero-foot { color: #d8e9f7; font-size: 14px; max-width: 240px; }
+    .orb { position: absolute; right: 25px; top: 68px; font-size: 64px; transform: rotate(-11deg); filter: drop-shadow(0 11px 18px rgba(0,0,0,.12)); }
+    .white-panel { border: 1px solid var(--line); background: #fff; border-radius: var(--radius); padding: 25px; box-shadow: 0 9px 32px rgba(37,58,91,.035); }
+    .section-top { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; margin-bottom: 15px; }
+    .section-top h3 { margin: 0; font-size: 19px; }
+    .fine { font-size: 13px; color: var(--muted); }
+    .mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+    .mode-button { text-align: left; display: flex; gap: 12px; align-items: center; padding: 15px 16px; border-radius: 15px; background: #f9fbff; border: 1.5px solid var(--line); color: var(--ink); transition: background .16s, border-color .16s, transform .16s; }
+    .mode-button:hover { border-color: #a1b7e2; }
+    .mode-button[aria-pressed="true"] { background: var(--accent-pale); border-color: #7697ed; box-shadow: inset 0 0 0 1px #7697ed; }
+    .mode-icon { flex: 0 0 34px; width: 34px; display: inline-grid; place-items: center; }
+    .mode-indicator { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #9aaec7; background: #fff; display: grid; place-items: center; transition: border-color .15s, background .15s; }
+    .mode-indicator::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: transparent; transition: background .15s; }
+    .mode-button[aria-pressed="true"] .mode-indicator { border-color: var(--accent); }
+    .mode-button[aria-pressed="true"] .mode-indicator::after { background: var(--accent); }
+    .mode-button strong, .mode-button small { display: block; }
+    .mode-button strong { font-size: 14px; }
+    .mode-button small { font-size: 12px; color: var(--muted); }
+    .scene-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .scene-card { border: 1px solid var(--line); border-radius: 23px; overflow: hidden; background: #fff; display: flex; flex-direction: column; transition: transform .18s, box-shadow .18s, border-color .18s; }
+    .scene-card:hover { transform: translateY(-3px); box-shadow: 0 17px 35px rgba(27,57,96,.08); border-color: #b2c7e7; }
+    .scene-art { min-height: 130px; display: grid; place-items: center; position: relative; overflow: hidden; }
+    .scene-art::before { content:''; position: absolute; width: 165px; height: 165px; border: 21px solid rgba(255,255,255,.44); border-radius: 50%; right: -26px; top: -55px; }
+    .scene-art .emoji { font-size: 55px; z-index: 1; }
+    .scene-art.bus { background: #deecff; }
+    .scene-art.food { background: #ffeadb; }
+    .scene-art.cinema { background: #e9e8ff; }
+    .scene-body { padding: 21px 19px 19px; display: flex; flex: 1; flex-direction: column; }
+    .small-label { color: #6280a2; text-transform: uppercase; letter-spacing: .075em; font-size: 11px; font-weight: 850; }
+    .scene-body h3 { font-size: 19px; margin: 8px 0 8px; }
+    .scene-body p { color: var(--muted); font-size: 13px; line-height: 1.5; flex: 1; margin-bottom: 19px; }
+    .scene-body .btn { width: 100%; }
+    .steps-strip { display: flex; gap: 18px; padding: 24px 4px 2px; flex-wrap: wrap; color: #5d7088; font-size: 13px; }
+    .steps-strip span { display: inline-flex; align-items: center; gap: 8px; }
+    .step-index { width: 23px; height: 23px; display: inline-grid; place-items: center; border-radius: 7px; background: #dce8f9; font-size: 12px; font-weight: 800; color: #42638e; }
+    .btn { display: inline-flex; justify-content: center; align-items: center; gap: 9px; border-radius: 13px; padding: 13px 18px; font-weight: 780; font-size: 14px; border: 1px solid transparent; transition: background .15s, transform .15s; text-decoration: none; min-height: 48px; }
+    .btn:not(:disabled):active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: white; box-shadow: 0 9px 19px rgba(50,93,218,.17); }
+    .btn-primary:not(:disabled):hover { background: var(--accent-dark); }
+    .btn-ghost { background: white; border-color: var(--line); color: var(--text); }
+    .btn-ghost:not(:disabled):hover { background: #f1f5fc; }
+    .btn-text { background: transparent; border-color: transparent; color: var(--accent); box-shadow: none; padding-left: 4px; }
+    .btn-link { border: 0; background: transparent; color: var(--accent); font-weight: 750; padding: 7px 0; text-align: left; }
+    .btn-block { width: 100%; }
+    .action-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 23px; }
+    .action-row .spacer { flex: 1; }
+    .progress-wrap { margin: 5px 0 24px; }
+    .progress-labels { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-bottom: 10px; font-weight: 700; }
+    .progress-track { height: 7px; border-radius: 50px; background: #dce5f0; overflow: hidden; }
+    .progress-track > div { height: 100%; width: 0; background: linear-gradient(90deg,#3d75e6,#41b4aa); border-radius: inherit; transition: width .3s ease; }
+    .story-top { display: flex; gap: 13px; align-items: center; margin-bottom: 15px; }
+    .story-bubble { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 18px; font-size: 28px; }
+    .story-bubble.bus { background: #e4f0ff; }
+    .story-bubble.food { background: #fff0e4; }
+    .story-bubble.cinema { background: #eeecff; }
+    .story-top h2 { margin: 2px 0 0; font-size: 28px; }
+    .task-layout { display: grid; grid-template-columns: minmax(245px, .79fr) minmax(0, 1.21fr); align-items: start; gap: 18px; }
+    .story-pane { background: #193451; color: white; padding: 25px; border-radius: var(--radius); position: relative; overflow: hidden; }
+    .story-pane::before { content: ''; position: absolute; background: rgba(255,255,255,.045); border: 28px solid rgba(255,255,255,.055); border-radius: 50%; height: 205px; width: 205px; right: -110px; top: -104px; }
+    .story-pane h3 { color: white; font-size: 20px; margin: 4px 0 14px; position: relative; }
+    .story-pane p { color: #dce9f8; font-size: 15px; line-height: 1.68; margin-bottom: 14px; position: relative; }
+    .story-pane p:last-child { margin-bottom: 0; }
+    .story-pane .small-label { color: #b5d8ed; }
+    .story-quote { border-left: 3px solid #78cfcb; padding-left: 12px; margin-top: 24px; font-weight: 750; color: #fff; position: relative; line-height: 1.52; }
+    .task-pane { padding: 25px; border-radius: var(--radius); border: 1px solid var(--line); background: white; }
+    .task-pane h3 { font-size: 22px; line-height: 1.25; margin: 9px 0 9px; }
+    .task-pane .task-hint { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+    .choice-list { display: grid; gap: 10px; }
+    .choice { display: flex; gap: 13px; align-items: flex-start; background: #fbfcff; border: 1.5px solid var(--line); padding: 15px; border-radius: 15px; cursor: pointer; transition: border-color .15s, background .15s; }
+    .choice:hover { border-color: #9bb4e5; }
+    .choice.selected { background: #edf3ff; border-color: #6b90ee; box-shadow: inset 0 0 0 1px #6b90ee; }
+    .letter { flex: 0 0 31px; height: 31px; border-radius: 10px; display: inline-grid; place-items: center; background: #e8edf6; font-weight: 850; color: #47617f; }
+    .choice.selected .letter { color: white; background: var(--accent); }
+    .choice-copy { flex: 1; color: var(--text); font-size: 14px; line-height: 1.55; padding-top: 4px; }
+    .radio-dot { width: 20px; height: 20px; border: 2px solid #adbcd0; border-radius: 50%; margin-top: 5px; flex: none; }
+    .choice.selected .radio-dot { border: 6px solid var(--accent); background: white; }
+    .form-label { display: block; font-weight: 800; font-size: 13px; margin: 22px 0 8px; }
+    textarea, .text-input { width: 100%; border: 1.5px solid #d6e0ea; border-radius: 13px; background: #fff; color: var(--ink); padding: 13px 15px; outline: none; }
+    textarea:focus, .text-input:focus { border-color: #527be1; box-shadow: 0 0 0 3px #e0eaff; }
+    textarea { min-height: 91px; resize: vertical; font-size: 14px; }
+    .field-help { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .field-help.is-valid { color: var(--green); font-weight: 700; }
+    .reason-note { font-size: 13px; background: #f2f6fe; border-radius: 11px; padding: 11px 13px; color: #405c7f; margin-top: 10px; }
+    textarea[aria-invalid="true"] { border-color: #cf9c62; }
+    .previous-callout { border-radius: 13px; background: #f0f5ff; border: 1px solid #dce8ff; color: var(--text); font-size: 13px; padding: 12px 14px; margin-bottom: 20px; }
+    .previous-callout strong { color: #234b94; }
+    .page-heading { margin-bottom: 24px; }
+    .page-heading p { max-width: 660px; line-height: 1.6; }
+    .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; }
+    .feedback-card { padding: 23px; border-radius: 20px; border: 1px solid var(--line); background: #fff; }
+    .feedback-card h3 { margin: 9px 0 14px; font-size: 19px; }
+    .feedback-card .chosen { font-size: 14px; color: var(--ink); font-weight: 720; line-height: 1.6; }
+    .feedback-card .reason { padding: 11px 13px; background: #f4f7fb; border-radius: 11px; color: var(--text); margin: 13px 0; font-size: 13px; }
+    .feedback-note { padding: 14px; border-radius: 13px; color: #20483e; background: var(--green-soft); margin: 15px 0; font-size: 14px; line-height: 1.6; }
+    .feedback-note.consider { background: var(--amber-soft); color: #714b22; }
+    .feedback-note.risky { background: var(--red-soft); color: #8d3333; }
+    .reflect { display: flex; gap: 12px; background: #e9f5f1; border: 1px solid #cbe8df; padding: 18px 20px; border-radius: 17px; margin-top: 21px; color: #245b50; font-size: 14px; line-height: 1.62; }
+    .report-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .report-top p { max-width: 700px; }
+    .report-block { background: white; border-radius: 21px; border: 1px solid var(--line); padding: 22px 25px; margin: 13px 0; }
+    .report-block h3 { margin-bottom: 16px; font-size: 18px; }
+    .report-row { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid #edf0f5; font-size: 14px; }
+    .report-row:first-of-type { border-top: 0; padding-top: 0; }
+    .report-key { font-size: 12px; font-weight: 850; letter-spacing: .01em; color: var(--muted); }
+    .report-value { line-height: 1.65; overflow-wrap: anywhere; }
+    .highlight-summary { margin-top: 18px; padding: 16px 18px; border-radius: 15px; background: #ecf7f4; color: #255f54; }
+    .highlight-summary p { color: #255f54; margin: 6px 0 0; font-size: 14px; }
+    .sent-banner { margin-top: 20px; background: #e7f6f1; border: 1px solid #acd8cc; color: #205c50; padding: 16px; border-radius: 14px; font-size: 14px; }
+    .modal-layer { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; }
+    .modal-overlay { position: absolute; inset: 0; background: rgba(15,31,53,.47); backdrop-filter: blur(2px); }
+    .modal-dialog { background: white; width: min(100%, 460px); max-height: min(680px, calc(100vh - 30px)); overflow-y: auto; border-radius: 26px; position: relative; box-shadow: 0 35px 100px rgba(10,25,43,.3); padding: 28px; }
+    .modal-dialog h2 { font-size: 27px; margin-top: 6px; }
+    .modal-dialog p { font-size: 14px; line-height: 1.6; }
+    .modal-label { font-size: 13px; font-weight: 850; margin: 22px 0 8px; display: block; }
+    .modal-small { padding: 12px 14px; background: #f1f5fb; border-radius: 12px; color: #577089; font-size: 13px; margin-top: 15px; }
+    .modal-close { position: absolute; right: 20px; top: 17px; border: 0; border-radius: 12px; width: 38px; height: 38px; background: #f2f5fb; color: #5f7189; font-size: 23px; line-height: 1; }
+    .form-error { border-radius: 11px; background: #fff1f0; color: #a33c37; padding: 12px; font-size: 13px; margin-top: 14px; }
+    .submit-spinner { width: 17px; height: 17px; display: inline-block; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 780px) {
+      .intro-hero { grid-template-columns: 1fr; }
+      .hero-copy { padding: 16px 3px 0; }
+      .hero-card { min-height: 190px; }
+      .hero-number { margin-top: 12px; }
+      .scene-grid { grid-template-columns: 1fr; gap: 12px; }
+      .scene-card { display: grid; grid-template-columns: 115px 1fr; }
+      .scene-art { min-height: 100%; }
+      .scene-art .emoji { font-size: 40px; }
+      .scene-body { padding: 15px; }
+      .scene-body h3 { font-size: 17px; margin: 4px 0 5px; }
+      .scene-body p { margin-bottom: 10px; }
+      .task-layout { grid-template-columns: 1fr; }
+      .feedback-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .app-shell { width: min(100% - 24px, 1080px); }
+      .topbar { padding: 17px 0 16px; }
+      .top-pill { padding: 8px 9px; font-size: 11px; }
+      .brand-mark { width: 34px; height: 34px; }
+      .brand { font-size: 14px; }
+      .white-panel { padding: 18px; }
+      .mode-toggle { grid-template-columns: 1fr; gap: 8px; }
+      .scene-card { grid-template-columns: 94px 1fr; }
+      .scene-body p { font-size: 12px; }
+      .steps-strip { gap: 12px; }
+      .story-pane, .task-pane { padding: 19px; }
+      .story-top h2 { font-size: 23px; }
+      .report-block { padding: 18px; }
+      .report-row { grid-template-columns: 1fr; gap: 3px; }
+      .action-row .btn { flex: 1 1 100%; }
+      .action-row .spacer { display: none; }
+      .modal-dialog { padding: 24px 20px; }
+      .orb { font-size: 50px; }
+      .report-top { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: 0s !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✦</span><span>Речі під контролем<span class="brand-sub">Здоров’я, безпека та добробут</span></span></div>
+      <span class="top-pill">6 клас · 8–10 хв</span>
+    </header>
+    <main id="mainContent" tabindex="-1"></main>
+    <footer class="footer"><span>Навчальна ситуаційна вправа · урок 12</span><span>Спочатку подумай → потім перевір наслідки</span></footer>
+  </div>
+  <div id="modalLayer" class="modal-layer hidden" aria-hidden="true"></div>
+  <div id="liveRegion" class="sr-only" aria-live="polite" role="status"></div>
+
+  <script>
+    'use strict';
+
+    const FORMSPREE_URL = 'https://formspree.io/f/mvkkezew';
+    const STORAGE_KEY = 'zbd6_belongings_exercise_v2';
+    const EXERCISE_VERSION = '1.1.0';
+    const MIN_REASON_LENGTH = 90;
+    const MIN_REASON_SENTENCES = 2;
+    const MAX_REASON_LENGTH = 520;
+
+    const SCENARIOS = {
+      bus: {
+        icon: '🚌', title: 'У переповненому автобусі', short: 'Речі, рівновага і вихід із транспорту', category: 'СИТУАЦІЯ А', color: 'bus',
+        story: 'Артем їде автобусом після школи. Проїзд уже оплачено телефоном. В одній руці він тримає телефон, другою — поручень. Рюкзак за спиною. Автобус заповнюється, а зовнішня кишеня рюкзака розстебнута.',
+        conflict: 'Як захистити речі й не втратити рівновагу під час руху?',
+        firstPrompt: 'Що Артемові зробити насамперед?',
+        firstOptions: [
+          { id: 'a', text: 'Одразу зняти рюкзак і застебнути кишеню, навіть якщо доведеться відпустити поручень.', tone: 'risky', feedback: 'Кишеня буде застебнута, але під час руху Артем може втратити рівновагу. Варто обирати момент, коли він може діяти стійко й безпечно.' },
+          { id: 'b', text: 'Прибрати телефон у захищену кишеню, триматися за поручень і поправити рюкзак, коли це буде безпечно.', tone: 'strong', feedback: 'Так Артем враховує і безпеку під час руху, і захист речей. Відкриту кишеню потрібно закрити за першої безпечної можливості.' },
+          { id: 'c', text: 'Продовжити тримати телефон у руці та спробувати пересунути рюкзак перед собою просто під час руху.', tone: 'consider', feedback: 'Рюкзак перед собою легше контролювати, але дві зайняті руки ускладнюють утримання рівноваги. Важливий і спосіб, і момент дії.' }
+        ],
+        twist: 'Автобус наближається до потрібної зупинки. Біля дверей уже стоїть багато пасажирів, які теж збираються виходити.',
+        secondPrompt: 'Як Артемові діяти після зміни обставин?',
+        secondOptions: [
+          { id: 'a', text: 'Швидко пройти до дверей, тримаючи телефон у руці, щоб не пропустити зупинку.', tone: 'risky', feedback: 'Поспіх у тісному просторі підвищує ризик штовханини, падіння та втрати речей. Краще підготуватися заздалегідь і не протискуватися силоміць.' },
+          { id: 'b', text: 'Заздалегідь прибрати телефон, тримати рюкзак під контролем і спокійно рухатися до дверей, коли це безпечно.', tone: 'strong', feedback: 'Такий план зберігає контроль над речами й враховує безпеку інших пасажирів. Якщо вийти безпечно не виходить, краще звернутися до водія чи до дорослого, ніж ризикувати.' },
+          { id: 'c', text: 'Почекати до останньої секунди, а тоді швидко пробратися крізь натовп до виходу.', tone: 'consider', feedback: 'Очікування може бути зручним, але поспіх у останню мить створює додатковий ризик. Варто продумати вихід завчасно, без тисняви.' }
+        ],
+        takeaway: 'Безпечна дія залежить не лише від того, ЩО робити, а й КОЛИ це робити.'
+      },
+      food: {
+        icon: '🍽️', title: 'Самій у фудкорті', short: 'Вільний столик, замовлення й зайняті руки', category: 'СИТУАЦІЯ Б', color: 'food',
+        story: 'Софія прийшла до фудкорту сама. Вона замовила обід і помітила останній вільний столик. Софія поставила рюкзак на стілець, а телефон — на стіл. На табло вже її номер: потрібно підійти до стійки й забрати тацю з їжею та гарячим чаєм. Якщо Софія забере речі із собою, столик можуть зайняти.',
+        conflict: 'Як зберегти місце для обіду, але не залишити власні речі без нагляду?',
+        firstPrompt: 'Який план Софії варто обрати зараз?',
+        firstOptions: [
+          { id: 'a', text: 'Забрати телефон, а рюкзак залишити на стільці як позначку, що столик зайнятий. Швидко повернутися з тацею.', tone: 'risky', feedback: 'Софія збереже шанс повернутися за столик, але рюкзак залишиться без нагляду. Навіть коротка відсутність не гарантує, що з ним нічого не станеться.' },
+          { id: 'b', text: 'Сховати телефон у закрите відділення, взяти рюкзак із собою й підійти до стійки. Погодитися з тим, що вільний столик можуть зайняти.', tone: 'strong', feedback: 'Це рішення означає відмовитися від зручного столика заради контролю над речами. Воно не гарантує місця для їжі, зате не залишає цінні речі без нагляду.' },
+          { id: 'c', text: 'Попросити відвідувача за сусіднім столом «на хвилинку» доглянути за рюкзаком, щоб не втрачати місце.', tone: 'consider', feedback: 'Софія може не втратити столик, але незнайома людина не зобов’язана відповідати за її речі. Надійніше самостійно контролювати майно або скоригувати спосіб отримання замовлення.' }
+        ],
+        twist: 'Софія підійшла до видачі з рюкзаком. За цей час усі столики зайняли. Їй подають тацю з гарячим чаєм, а поруч тісно й багато людей проходить. Працівник запитує, чи забирати замовлення зараз. Софія має вирішити, як не загубити речі й не пролити гарячий напій.',
+        secondPrompt: 'Як діяти, коли столика немає, а замовлення готове?',
+        secondOptions: [
+          { id: 'a', text: 'Поставити рюкзак біля стійки на підлогу, взяти тацю обома руками та піти шукати місце серед столиків.', tone: 'risky', feedback: 'Так легше тримати тацю, але рюкзак може залишитися поза контролем або заважати рухові людей. До того ж іти через тісний фудкорт із гарячим напоєм ризиковано.' },
+          { id: 'b', text: 'Залишити рюкзак на плечах, не блокувати прохід і попросити працівника ненадовго потримати тацю чи допомогти з пакуванням. Лише потім обрати безпечне місце.', tone: 'strong', feedback: 'Софія враховує одразу два ризики: втрату речей і гарячий напій у тісному проході. Допомога працівника можлива, якщо він погодиться; якщо ні — варто спокійно пошукати інший безпечний спосіб отримати замовлення.' },
+          { id: 'c', text: 'Забрати тацю зараз і повільно пройти до столиків, тримаючи рюкзак на плечах, навіть якщо вільного місця ще немає.', tone: 'consider', feedback: 'Рюкзак залишається із Софією, і це добре. Проте без вільного столика доведеться довго тримати тацю з гарячим чаєм серед людей. Спочатку варто вирішити, де можна безпечно поставити їжу.' }
+        ],
+        takeaway: 'Іноді доводиться поступитися зручністю. Захищаючи речі, враховуй також зайняті руки, гарячі предмети та умови навколо.'
+      },
+      cinema: {
+        icon: '🎬', title: 'Чий це рюкзак?', short: 'Схожі сумки, поспіх і суперечка на виході', category: 'СИТУАЦІЯ В', color: 'cinema',
+        story: 'Після кіносеансу Данило збирається виходити. Біля його крісла стоять два майже однакові чорні рюкзаки — його та іншого глядача. Свій Данило зазвичай упізнає за маленькою стрічкою на лямці, але в залі напівтемрява, а в проході вже рухається натовп. Друзі кличуть його швидше.',
+        conflict: 'Як не переплутати рюкзаки, але й не затримувати людей на виході?',
+        firstPrompt: 'Як Данилові вчинити перед виходом із зали?',
+        firstOptions: [
+          { id: 'a', text: 'Взяти найближчий чорний рюкзак і перевірити стрічку вже в освітленому фоє, щоб не затримувати друзів.', tone: 'risky', feedback: 'Це швидко, але є ризик випадково забрати чужий рюкзак. Поспіх не замінює перевірки того, кому належить річ.' },
+          { id: 'b', text: 'Пропустити людей, відійти від проходу та перевірити стрічку на лямці. Забрати лише той рюкзак, у належності якого впевнений.', tone: 'strong', feedback: 'Данило не блокує прохід і перевіряє ознаку своєї речі до того, як піти. Друзі можуть зачекати: уникнення плутанини важливіше за поспіх.' },
+          { id: 'c', text: 'Попросити друга взяти один рюкзак, а самому взяти інший. У фоє разом з’ясувати, який чий.', tone: 'consider', feedback: 'Так можна швидше звільнити прохід, проте Данило та його друг ризикують забрати чужу річ. Важливо спочатку перевірити належність, а вже потім переносити рюкзак.' }
+        ],
+        twist: 'У фоє до Данила підходить незнайомий підліток і каже: «Це мій рюкзак!». Стрічки, за якою Данило впізнавав свій, на лямці не видно. Обидва впевнені у своїх словах, навколо збираються люди. Друг радить Данилові не віддавати рюкзак й одразу йти геть.',
+        secondPrompt: 'Як діяти, коли власника рюкзака неможливо визначити одразу?',
+        secondOptions: [
+          { id: 'a', text: 'Міцно тримати рюкзак і йти до виходу, не слухаючи іншого хлопця: Данило ж теж упевнений, що річ його.', tone: 'risky', feedback: 'Це може загострити суперечку й не допоможе встановити власника. Не варто переходити до штовханини чи намагатися силою вирішити питання.' },
+          { id: 'b', text: 'Запропонувати разом підійти до працівника кінотеатру, спокійно описати відмінні ознаки своїх речей і перевірити їх без сварки та без втручання у чужу приватність.', tone: 'strong', feedback: 'Данило не звинувачує іншого підлітка й не віддає спірну річ навмання. Допомога працівника та перевірка відомих власникові ознак дозволяють вирішувати ситуацію безпечно й чесно; за потреби слід покликати дорослого.' },
+          { id: 'c', text: 'Віддати рюкзак незнайомому хлопцеві без перевірки, аби суперечка швидше закінчилася. Якщо це помилка — розбиратися потім.', tone: 'consider', feedback: 'Уникати сварки важливо, проте передавати рюкзак лише через вимогу незнайомої людини теж необачно. Краще з’ясувати обставини разом із працівником закладу.' }
+        ],
+        takeaway: 'Зовнішньо схожі речі можна переплутати. Коли виникає суперечка щодо власності, потрібні перевірка ознак, спокій і допомога дорослого або працівника закладу.'
+      }
+    };
+
+    const app = document.getElementById('mainContent');
+    const shell = document.getElementById('appShell');
+    const modal = document.getElementById('modalLayer');
+    const live = document.getElementById('liveRegion');
+    const emptyState = () => ({ mode: 'solo', scenario: null, phase: 'select', first: { choiceId: '', reason: '' }, second: { choiceId: '', reason: '' }, submitted: null });
+    let state = restore();
+    let pendingSnapshot = null;
+    let sending = false;
+    let lastFocus = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function restore() {
+      const fallback = emptyState();
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved || !['solo','group'].includes(saved.mode)) return fallback;
+        const story = SCENARIOS[saved.scenario] ? saved.scenario : null;
+        const stageIsValid = (stage, field) => SCENARIOS[story] && SCENARIOS[story][field].some(option => option.id === stage.choiceId);
+        const first = { choiceId: stageIsValid(saved.first || {}, 'firstOptions') ? saved.first.choiceId : '', reason: String(saved.first?.reason || '').slice(0, MAX_REASON_LENGTH) };
+        const second = { choiceId: stageIsValid(saved.second || {}, 'secondOptions') ? saved.second.choiceId : '', reason: String(saved.second?.reason || '').slice(0, MAX_REASON_LENGTH) };
+        const validFirst = !!first.choiceId && validReason(first.reason);
+        const validSecond = !!second.choiceId && validReason(second.reason);
+        let phase = ['select','one','two','feedback','report'].includes(saved.phase) ? saved.phase : 'select';
+        if (!story) phase = 'select';
+        else if (['two','feedback','report'].includes(phase) && !validFirst) phase = 'one';
+        else if (['feedback','report'].includes(phase) && !validSecond) phase = 'two';
+        const submitted = saved.submitted && typeof saved.submitted.fingerprint === 'string' && typeof saved.submitted.time === 'string'
+          ? { fingerprint: saved.submitted.fingerprint, time: saved.submitted.time } : null;
+        return { mode: saved.mode, scenario: story, phase, first, second, submitted };
+      } catch (_) { return fallback; }
+    }
+    function persist() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* Працюємо без локального сховища */ }
+    }
+    function scrollToTop() { window.scrollTo({ top: 0, behavior: 'auto' }); }
+    function notice(text) { live.textContent = text; }
+    function fingerprint() { return JSON.stringify({ scenario: state.scenario, mode: state.mode, first: state.first, second: state.second }); }
+    function isCurrentSent() { return state.submitted?.fingerprint === fingerprint(); }
+    function getChoice(stage) {
+      const field = stage === 'first' ? 'firstOptions' : 'secondOptions';
+      return SCENARIOS[state.scenario]?.[field].find(item => item.id === state[stage].choiceId) || null;
+    }
+    function reasonStats(value) {
+      const cleaned = String(value || '').trim();
+      const sentences = (cleaned.match(/[.!?…]+(?=\s|$)/g) || []).length;
+      return { characters: cleaned.length, sentences };
+    }
+    function validReason(value) {
+      const info = reasonStats(value);
+      return info.characters >= MIN_REASON_LENGTH && info.sentences >= MIN_REASON_SENTENCES;
+    }
+    function reasonHelp(value) {
+      const info = reasonStats(value);
+      const ok = validReason(value);
+      const status = ok ? '✓ Можна продовжувати.' :
+        info.sentences < MIN_REASON_SENTENCES ? 'Заверши щонайменше два речення крапкою, знаком питання або оклику.' :
+        'Додай пояснення, щоб було зрозуміло, які ризики ти враховуєш.';
+      return `${info.characters}/${MIN_REASON_LENGTH} символів · ${info.sentences}/${MIN_REASON_SENTENCES} речень. ${status}`;
+    }
+    function canProceed(stage) { return !!getChoice(stage) && validReason(state[stage].reason); }
+    function setPhase(phase) { state.phase = phase; persist(); render(); scrollToTop(); }
+    function progress(percent, label) {
+      return `<div class="progress-wrap" aria-label="Прогрес виконання: ${escapeHtml(label)}"><div class="progress-labels"><span>${escapeHtml(label)}</span><span>Два рішення → наслідки → звіт</span></div><div class="progress-track"><div style="width:${percent}%"></div></div></div>`;
+    }
+
+    function renderSelect() {
+      return `<div class="intro-hero">
+        <div class="hero-copy"><div class="eyebrow">Мініінтерактив · проблемні ситуації</div>
+        <h1>Речі під <span class="marker">контролем</span></h1>
+        <p>Три проблемні історії. Обери план, поясни його двома-трьома реченнями, а потім перевір, чи витримає він зміну обставин.</p>
+        <p class="fine">Можна працювати самому або обговорювати відповіді з командою.</p></div>
+        <div class="hero-card"><div class="hero-card-label">Не просто вгадай відповідь</div><span class="hero-number">02</span><div class="hero-foot">рішення в одній історії — і пояснення їхніх можливих наслідків</div><span class="orb" aria-hidden="true">🎒</span></div>
+      </div>
+      <section class="white-panel" aria-labelledby="modeTitle"><div class="section-top"><h3 id="modeTitle">Як ти працюватимеш?</h3><span class="fine">Обери формат</span></div>
+        <div class="mode-toggle" role="group" aria-label="Формат роботи">
+          <button type="button" data-action="mode" data-mode="solo" aria-pressed="${state.mode === 'solo'}" class="mode-button"><span class="mode-icon" aria-hidden="true"><span class="mode-indicator"></span></span><span><strong>Самостійно</strong><small>Один учень — один звіт</small></span></button>
+          <button type="button" data-action="mode" data-mode="group" aria-pressed="${state.mode === 'group'}" class="mode-button"><span class="mode-icon" aria-hidden="true"><span class="mode-indicator"></span></span><span><strong>У команді</strong><small>Обговоріть і надішліть спільний звіт</small></span></button>
+        </div>
+        <div class="section-top"><h3>Обери історію</h3><span class="fine">Усі три рівноцінні</span></div>
+        <div class="scene-grid">${Object.entries(SCENARIOS).map(([id,s]) => `<article class="scene-card"><div class="scene-art ${s.color}"><span class="emoji" aria-hidden="true">${s.icon}</span></div><div class="scene-body"><span class="small-label">${s.category}</span><h3>${escapeHtml(s.title)}</h3><p>${escapeHtml(s.short)}</p><button class="btn btn-primary" data-action="start" data-scenario="${id}">Почати історію <span aria-hidden="true">→</span></button></div></article>`).join('')}</div>
+        <div class="steps-strip" aria-label="Як працює вправа"><span><span class="step-index">1</span> Обери рішення</span><span><span class="step-index">2</span> Зваж нову обставину</span><span><span class="step-index">3</span> Перевір і надішли звіт</span></div>
+      </section>`;
+    }
+
+    function renderTask(stage) {
+      const s = SCENARIOS[state.scenario];
+      const first = stage === 'first';
+      const options = first ? s.firstOptions : s.secondOptions;
+      const selected = state[stage].choiceId;
+      const title = first ? 'Початкове рішення' : 'Обставини змінилися';
+      const storyTitle = first ? 'Що відбувається?' : 'Несподіваний поворот';
+      const story = first ? s.story : s.twist;
+      const question = first ? s.firstPrompt : s.secondPrompt;
+      const previous = !first ? `<div class="previous-callout"><strong>Твій попередній вибір:</strong> ${escapeHtml(getChoice('first')?.text || '')}</div>` : '';
+      return `${progress(first ? 25 : 50, first ? 'Крок 1 із 4' : 'Крок 2 із 4')}
+        <div class="story-top"><div class="story-bubble ${s.color}" aria-hidden="true">${s.icon}</div><div><div class="small-label">${s.category}</div><h2>${escapeHtml(s.title)}</h2></div></div>
+        <div class="task-layout"><aside class="story-pane"><div class="small-label">${storyTitle}</div><h3>${first ? 'Ситуація' : 'Нова умова'}</h3><p>${escapeHtml(story)}</p>${first ? `<div class="story-quote">${escapeHtml(s.conflict)}</div>` : `<div class="story-quote">Чи підходить попередній план тепер?</div>`}</aside>
+        <section class="task-pane" aria-labelledby="taskTitle"><span class="small-label">${title}</span><h3 id="taskTitle">${escapeHtml(question)}</h3><p class="task-hint">Обери один із можливих планів і поясни свій вибір у 2–3 реченнях. Наслідки відкриються після обох рішень.</p>${previous}
+          <div class="choice-list" role="radiogroup" aria-label="Можливі дії">${options.map((option,i) => `<label class="choice ${selected === option.id ? 'selected' : ''}"><input class="sr-only" type="radio" name="choice" value="${option.id}" ${selected === option.id ? 'checked' : ''}><span class="letter">${['А','Б','В'][i]}</span><span class="choice-copy">${escapeHtml(option.text)}</span><span class="radio-dot" aria-hidden="true"></span></label>`).join('')}</div>
+          <label class="form-label" for="reasonInput">Чому ти обрав / обрала цей варіант?</label>
+          <textarea id="reasonInput" maxlength="${MAX_REASON_LENGTH}" rows="4" aria-describedby="reasonHelp" placeholder="${first ? 'Напиши 2–3 речення: який ризик ти помітив/ла? Чому обраний план його зменшує?' : 'Напиши 2–3 речення: як змінилися ризики? Чому твій новий план кращий?'}">${escapeHtml(state[stage].reason)}</textarea>
+          <div class="field-help ${validReason(state[stage].reason) ? 'is-valid' : ''}" id="reasonHelp">${escapeHtml(reasonHelp(state[stage].reason))}</div>
+          <div class="reason-note">Поясни вибір щонайменше двома завершеними реченнями (від ${MIN_REASON_LENGTH} символів). Не просто повторюй текст кнопки: назви ризик і причину свого рішення. Це пояснення потрапить у звіт.</div>
+          <div class="action-row"><button class="btn btn-ghost" data-action="back">← Назад</button><span class="spacer"></span><button class="btn btn-primary" data-action="advance" id="advanceButton" ${canProceed(stage) ? '' : 'disabled'}>${first ? 'Далі: нова обставина' : 'Побачити наслідки'} <span aria-hidden="true">→</span></button></div>
+        </section></div>`;
+    }
+
+    function renderFeedback() {
+      const s = SCENARIOS[state.scenario];
+      const stages = [{ id:'first', name:'Початкове рішення', action:'Змінити перше рішення' }, { id:'second', name:'Після зміни обставин', action:'Змінити друге рішення' }];
+      return `${progress(75,'Крок 3 із 4')}<div class="page-heading"><div class="eyebrow">Час перевірити гіпотези</div><h2>Які наслідки можуть мати твої рішення?</h2><p>Ти зробив / зробила два вибори. Тепер порівняй їхні можливі наслідки. Якщо потрібно — зміни відповідь до формування звіту.</p></div>
+      <div class="feedback-grid">${stages.map(({id,name,action},i) => { const ch = getChoice(id); const tone = ch?.tone || 'consider'; return `<article class="feedback-card"><span class="small-label">РІШЕННЯ ${i+1}</span><h3>${name}</h3><div class="chosen">${escapeHtml(ch?.text || '—')}</div><div class="reason"><strong>Твоє пояснення:</strong> ${escapeHtml(state[id].reason)}</div><div class="feedback-note ${tone === 'strong' ? '' : tone}"><strong>${tone === 'strong' ? 'Ризики враховано' : tone === 'risky' ? 'Залишається суттєвий ризик' : 'Є що вдосконалити'}</strong><div>${escapeHtml(ch?.feedback || '')}</div></div><button class="btn-link" data-action="edit" data-step="${id}">↶ ${action}</button></article>`; }).join('')}</div>
+      <div class="reflect"><span aria-hidden="true">✦</span><div><strong>Що варто запам’ятати:</strong> ${escapeHtml(s.takeaway)}<br>Втрата чи крадіжка не завжди залежить від дій власника. Ми вчимося зменшувати ризики, а не звинувачувати постраждалих.</div></div>
+      <div class="action-row"><button class="btn btn-ghost" data-action="back">← Назад</button><span class="spacer"></span><button class="btn btn-primary" data-action="to-report">Сформувати звіт <span aria-hidden="true">→</span></button></div>`;
+    }
+
+    function renderReport() {
+      const s = SCENARIOS[state.scenario];
+      const info = [
+        { name: 'Перше рішення', id: 'first', opts: s.firstOptions },
+        { name: 'Нова обставина', id: 'second', opts: s.secondOptions }
+      ];
+      const sent = isCurrentSent();
+      return `${progress(100,'Крок 4 із 4')}<div class="report-top"><div class="page-heading"><div class="eyebrow">Твоя робота готова</div><h2>Підсумковий звіт</h2><p>У звіті збережені твої рішення та пояснення. Перевір їх перед надсиланням. Це навчальна робота без балів.</p></div><div class="top-pill">${state.mode === 'group' ? 'Режим команди' : 'Індивідуальна робота'}</div></div>
+        <div class="report-block"><span class="small-label">СИТУАЦІЯ</span><h3>${s.icon} ${escapeHtml(s.title)}</h3><p class="fine" style="margin-bottom:0">${escapeHtml(s.conflict)}</p></div>
+        ${info.map(({name,id},i) => { const c = getChoice(id); return `<section class="report-block"><h3>${i+1}. ${name}</h3><div class="report-row"><span class="report-key">Твій вибір</span><div class="report-value">${escapeHtml(c?.text || '—')}</div></div><div class="report-row"><span class="report-key">Чому саме так</span><div class="report-value">${escapeHtml(state[id].reason)}</div></div><div class="report-row"><span class="report-key">Зворотний зв'язок</span><div class="report-value">${escapeHtml(c?.feedback || '—')}</div></div></section>`; }).join('')}
+        <div class="highlight-summary"><strong>Головний висновок</strong><p>${escapeHtml(s.takeaway)}</p></div>
+        ${sent ? `<div class="sent-banner" role="status"><strong>✓ Звіт надіслано у Formspree.</strong><br>Час підтвердженого надсилання: ${escapeHtml(formatDate(state.submitted.time))}. Якщо змінити відповіді, можна надіслати оновлений звіт.</div>` : ''}
+        <div class="action-row"><button class="btn btn-ghost" data-action="copy">Копіювати звіт</button><button class="btn btn-ghost" data-action="edit" data-step="first">Редагувати відповіді</button><span class="spacer"></span><button class="btn btn-primary" data-action="open-modal" ${sent ? 'disabled' : ''}>${sent ? '✓ Надіслано' : 'Відправити звіт →'}</button></div>
+        <div class="action-row"><button class="btn-link" data-action="home">← Обрати іншу ситуацію</button></div>`;
+    }
+
+    function formatDate(iso) {
+      try { return new Intl.DateTimeFormat('uk-UA',{dateStyle:'medium',timeStyle:'short'}).format(new Date(iso)); } catch (_) { return iso; }
+    }
+    function render() {
+      const s = SCENARIOS[state.scenario];
+      if (!s) state.phase = 'select';
+      app.innerHTML = state.phase === 'select' ? renderSelect() : state.phase === 'one' ? renderTask('first') : state.phase === 'two' ? renderTask('second') : state.phase === 'feedback' ? renderFeedback() : renderReport();
+      persist();
+    }
+    function reportData(identifier) {
+      const s = SCENARIOS[state.scenario];
+      const buildEvidence = (stage) => {
+        const ch = getChoice(stage);
+        return {
+          choice_id: state[stage].choiceId,
+          chosen_action: ch?.text || '',
+          justification: state[stage].reason.trim(),
+          feedback: ch?.feedback || '',
+          feedback_category: ch?.tone || ''
+        };
+      };
+      return {
+        schema_version: '1.0', exercise_id: 'zbd6_rechi_pid_kontrolem', exercise_version: EXERCISE_VERSION,
+        class: 6, subject: 'ЗБД', exercise_title: 'Речі під контролем',
+        participation_mode: state.mode === 'group' ? 'команда' : 'індивідуально',
+        participant: identifier || '(не вказано)',
+        variant_id: state.scenario, scenario_title: s.title,
+        scenario_context: { initial_situation: s.story, central_problem: s.conflict, changed_circumstances: s.twist },
+        evidence: { initial_decision: buildEvidence('first'), changed_circumstances_decision: buildEvidence('second') },
+        summary: { learning_conclusion: s.takeaway, is_graded: false }
+      };
+    }
+    function reportText(identifier) {
+      return JSON.stringify(reportData(identifier), null, 2);
+    }
+    function reportReadable() {
+      const s = SCENARIOS[state.scenario];
+      const first = getChoice('first');
+      const second = getChoice('second');
+      return `Речі під контролем · ЗБД, 6 клас\nФормат: ${state.mode === 'group' ? 'команда' : 'самостійно'}\nСитуація: ${s.title}\n\n1. Початкове рішення:\n${first?.text}\nПояснення: ${state.first.reason.trim()}\nЗворотний зв’язок: ${first?.feedback}\n\n2. Після зміни обставин:\n${second?.text}\nПояснення: ${state.second.reason.trim()}\nЗворотний зв’язок: ${second?.feedback}\n\nВисновок: ${s.takeaway}`;
+    }
+    async function copyReport() {
+      try {
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(reportReadable());
+        else {
+          const temp = document.createElement('textarea');
+          temp.value = reportReadable();
+          temp.style.position = 'fixed'; temp.style.opacity = '0';
+          document.body.appendChild(temp); temp.select();
+          if (!document.execCommand('copy')) throw new Error('copy failed');
+          temp.remove();
+        }
+        notice('Звіт скопійовано.');
+        const button = app.querySelector('[data-action="copy"]');
+        if (button) { button.textContent = '✓ Скопійовано'; setTimeout(() => { if (button.isConnected) button.textContent = 'Копіювати звіт'; }, 2200); }
+      } catch (_) { notice('Не вдалося скопіювати. Можна виділити текст звіту вручну.'); }
+    }
+    function openModal() {
+      if (state.phase !== 'report' || isCurrentSent()) return;
+      pendingSnapshot = { fingerprint: fingerprint(), payload: reportData('') };
+      lastFocus = document.activeElement;
+      const isGroup = state.mode === 'group';
+      modal.innerHTML = `<div class="modal-overlay" data-action="close-modal"></div><div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription">
+        <button type="button" class="modal-close" data-action="close-modal" aria-label="Закрити вікно">×</button>
+        <div class="eyebrow">Надсилання звіту</div><h2 id="modalTitle">Майже готово!</h2>
+        <p id="modalDescription">${isGroup ? 'Вкажіть назву команди — учитель отримає один спільний звіт.' : 'Вкажи прізвище та ім’я — учитель знатиме, чию роботу перевіряти.'}</p>
+        <div class="modal-small"><strong>Ситуація:</strong> ${escapeHtml(SCENARIOS[state.scenario].title)}<br><strong>Звіт:</strong> обидва рішення, пояснення й зворотний зв’язок</div>
+        <form id="submissionForm" novalidate>
+          <label class="modal-label" for="participantInput">${isGroup ? 'Назва команди' : 'Прізвище та ім’я'} <span aria-hidden="true">*</span></label>
+          <input class="text-input" type="text" id="participantInput" name="participant" required minlength="2" maxlength="100" autocomplete="name" placeholder="${isGroup ? 'Наприклад: Команда 2' : 'Наприклад: Коваленко Софія'}" aria-required="true">
+          <div id="modalError" class="form-error hidden" role="alert"></div>
+          <div class="action-row"><button type="button" class="btn btn-ghost" data-action="close-modal" id="cancelButton">Скасувати</button><span class="spacer"></span><button type="submit" class="btn btn-primary" id="submitButton">Надіслати у Formspree →</button></div>
+        </form><p class="field-help" style="margin-top:15px">Надсилаються лише ім’я або назва команди та відповіді у вправі. Надсилання можливе лише з доступом до інтернету.</p></div>`;
+      modal.classList.remove('hidden'); modal.setAttribute('aria-hidden','false');
+      shell.classList.add('is-blurred'); shell.inert = true;
+      document.body.style.overflow = 'hidden';
+      modal.querySelector('#participantInput').focus();
+    }
+    function closeModal() {
+      if (sending) return;
+      modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true'); modal.innerHTML = '';
+      shell.classList.remove('is-blurred'); shell.inert = false;
+      document.body.style.overflow = '';
+      pendingSnapshot = null;
+      if (lastFocus && lastFocus.isConnected) lastFocus.focus();
+    }
+    function showModalError(message) {
+      const el = modal.querySelector('#modalError');
+      if (el) { el.textContent = message; el.classList.remove('hidden'); }
+    }
+    async function sendReport(evt) {
+      evt.preventDefault();
+      if (sending || !pendingSnapshot) return;
+      const nameInput = modal.querySelector('#participantInput');
+      const identifier = String(nameInput?.value || '').trim().replace(/\s+/g,' ');
+      if (identifier.length < 2) { showModalError('Вкажіть прізвище та ім’я або назву команди (не менше 2 символів).'); nameInput?.focus(); return; }
+      if (pendingSnapshot.fingerprint !== fingerprint()) { showModalError('Відповіді змінилися. Закрийте вікно та відкрийте звіт знову.'); return; }
+      const btn = modal.querySelector('#submitButton');
+      const cancel = modal.querySelector('#cancelButton');
+      const x = modal.querySelector('.modal-close');
+      const error = modal.querySelector('#modalError');
+      error?.classList.add('hidden');
+      sending = true;
+      btn.disabled = true; cancel.disabled = true; x.disabled = true;
+      btn.innerHTML = '<span class="submit-spinner" aria-hidden="true"></span> Надсилаємо…';
+      try {
+        const data = { ...pendingSnapshot.payload, participant: identifier };
+        const form = new FormData();
+        form.append('_date', new Date().toISOString());
+        form.append('_subject', 'ЗБД · 6 клас · Речі під контролем');
+        form.append('_name', identifier);
+        form.append('message', JSON.stringify(data, null, 2));
+        const response = await fetch(FORMSPREE_URL, { method: 'POST', body: form, headers: { 'Accept': 'application/json' } });
+        if (!response.ok) {
+          let details = '';
+          try { const json = await response.json(); details = json.errors?.map(e => e.message).filter(Boolean).join(' ') || ''; } catch (_) {}
+          throw new Error(details || `Сервер повернув помилку ${response.status}.`);
+        }
+        state.submitted = { fingerprint: pendingSnapshot.fingerprint, time: new Date().toISOString() };
+        persist();
+        sending = false;
+        closeModal();
+        render(); notice('Звіт успішно надіслано у Formspree.');
+        scrollToTop();
+      } catch (error) {
+        showModalError('Не вдалося надіслати звіт. Перевірте інтернет-з’єднання та спробуйте ще раз. ' + String(error.message || ''));
+        sending = false;
+        btn.disabled = false; cancel.disabled = false; x.disabled = false;
+        btn.textContent = 'Спробувати ще раз →';
+      }
+    }
+
+    app.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-action]');
+      if (!button || button.disabled) return;
+      const action = button.dataset.action;
+      if (action === 'mode') { state.mode = button.dataset.mode; persist(); render(); }
+      if (action === 'start') {
+        state.scenario = button.dataset.scenario;
+        state.first = {choiceId:'',reason:''}; state.second = {choiceId:'',reason:''}; state.submitted = null;
+        setPhase('one');
+      }
+      if (action === 'advance') {
+        if (state.phase === 'one' && canProceed('first')) setPhase('two');
+        else if (state.phase === 'two' && canProceed('second')) setPhase('feedback');
+      }
+      if (action === 'back') {
+        setPhase(state.phase === 'one' ? 'select' : state.phase === 'two' ? 'one' : state.phase === 'feedback' ? 'two' : 'feedback');
+      }
+      if (action === 'edit') setPhase(button.dataset.step === 'first' ? 'one' : 'two');
+      if (action === 'to-report') setPhase('report');
+      if (action === 'open-modal') openModal();
+      if (action === 'copy') await copyReport();
+      if (action === 'home') setPhase('select');
+    });
+    app.addEventListener('change', (event) => {
+      const input = event.target;
+      if (input.name !== 'choice') return;
+      const step = state.phase === 'one' ? 'first' : state.phase === 'two' ? 'second' : null;
+      if (!step) return;
+      const field = step === 'first' ? 'firstOptions' : 'secondOptions';
+      if (!SCENARIOS[state.scenario][field].some(o => o.id === input.value)) return;
+      state[step].choiceId = input.value;
+      persist();
+      app.querySelectorAll('.choice').forEach(label => label.classList.toggle('selected', label.contains(input)));
+      const advance = app.querySelector('#advanceButton');
+      if (advance) advance.disabled = !canProceed(step);
+    });
+    app.addEventListener('input', (event) => {
+      if (event.target.id !== 'reasonInput') return;
+      const step = state.phase === 'one' ? 'first' : state.phase === 'two' ? 'second' : null;
+      if (!step) return;
+      state[step].reason = event.target.value.slice(0, MAX_REASON_LENGTH);
+      persist();
+      const help = app.querySelector('#reasonHelp');
+      if (help) { help.textContent = reasonHelp(state[step].reason); help.classList.toggle('is-valid', validReason(state[step].reason)); }
+      const advance = app.querySelector('#advanceButton');
+      if (advance) advance.disabled = !canProceed(step);
+    });
+    modal.addEventListener('click', (event) => {
+      if (event.target.closest('[data-action="close-modal"]')) closeModal();
+    });
+    modal.addEventListener('submit', (event) => {
+      if (event.target.id === 'submissionForm') sendReport(event);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (modal.classList.contains('hidden')) return;
+      if (event.key === 'Escape' && !sending) { event.preventDefault(); closeModal(); return; }
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(modal.querySelectorAll('button:not(:disabled), input:not(:disabled)'));
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>
